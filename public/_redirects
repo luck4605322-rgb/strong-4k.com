@@ -1,7 +1,15 @@
-# Legacy single-URL language switching (?lang=xx) -> real locale routes (301).
-# Keeps old shared links and previously indexed ?lang URLs pointing at the new
-# static pages instead of a query string on the English page.
+# ---------------------------------------------------------------
+# strong-4k.com - Cloudflare Pages routing (Next.js static export)
+#
+# English is served at the site root (one single index.html);
+# every other locale is a real pre-rendered directory (/it/, /de/ ...)
+# so URLs, canonicals, hreflang and sitemap all agree.
+#
+# NOTE: do not deploy a Pages Function (functions/index.ts) from the
+# v0 workspace with this project - its locale-detection middleware
+# answers 302 for every request and breaks the static routes.
+# ---------------------------------------------------------------
 
-/en/*  /  301
-
-# Arabic pages are RTL; nothing to rewrite here, dir is set by the locale layout.
+# Legacy /en prefix -> English root
+/en      /  301
+/en/*    /  301
