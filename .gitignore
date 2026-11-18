@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js build output (Cloudflare Pages builds on push)
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# local env
+.env*
+!.env.example
+.npmrc
+
+# misc
+.DS_Store
+*.log

@@ -1,42 +1,25 @@
-import type { MetadataRoute } from "next"
+import type { MetadataRoute } from 'next'
+import { SEO_LOCALES, pathFor } from '@/lib/seo-content'
 
-const BASE_URL = "https://strong-4k.com"
+const BASE_URL = 'https://strong-4k.com'
 
-export const dynamic = "force-static"
+export const dynamic = 'force-static'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
 
-  return [
-    {
-      url: BASE_URL,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${BASE_URL}/#pricing`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/#reseller`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/#features`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/#faq`,
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-  ]
+  // hreflang cluster shared by every entry, so each locale page advertises all
+  // of its siblings plus x-default.
+  const languages: Record<string, string> = { 'x-default': `${BASE_URL}/` }
+  for (const locale of SEO_LOCALES) {
+    languages[locale] = `${BASE_URL}${pathFor(locale)}/`
+  }
+
+  return SEO_LOCALES.map((locale) => ({
+    url: `${BASE_URL}${pathFor(locale)}/`,
+    lastModified,
+    changeFrequency: 'weekly' as const,
+    priority: locale === 'en' ? 1 : 0.8,
+    alternates: { languages },
+  }))
 }

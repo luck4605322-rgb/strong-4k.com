@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, Globe } from 'lucide-react'
 
-type Language =
+export type Language =
   | 'en'
   | 'it'
   | 'fr'
@@ -246,25 +246,42 @@ function detectLanguage(): Language {
   return isLanguage(code) ? code : 'en'
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en')
-  useEffect(() => setLanguageState(detectLanguage()), [])
+export function LanguageProvider({
+  children,
+  initialLanguage,
+}: {
+  children: React.ReactNode
+  initialLanguage?: Language
+}) {
+  const [language, setLanguageState] = useState<Language>(initialLanguage ?? 'en')
+
+  // When a language is supplied by the route (server render), the URL is the
+  // source of truth: every locale has its own static page and matching hreflang.
+  // Without it (legacy ?lang= links) fall back to query, saved preference or
+  // browser language once hydrated.
+  useEffect(() => {
+    if (initialLanguage) return
+    setLanguageState(detectLanguage())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLanguage])
   useEffect(() => {
     document.documentElement.lang = language
     document.documentElement.dir = LANGUAGE_META[language].rtl ? 'rtl' : 'ltr'
   }, [language])
 
-  // Persist the choice and sync the URL so every language has a shareable,
-  // crawlable URL that matches its hreflang alternate.
+  // Persist the choice and navigate to that locale's own pre-rendered route, so
+  // URL, <html lang> and the served HTML always agree instead of relying on
+  // client-side string swapping on a single URL.
   const setLanguage = (next: Language) => {
     setLanguageState(next)
     try {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next)
     } catch {}
+
     const url = new URL(window.location.href)
-    if (next === 'en') url.searchParams.delete('lang')
-    else url.searchParams.set('lang', next)
-    window.history.replaceState(null, '', url)
+    url.pathname = next === 'en' ? '/' : `/${next}/`
+    url.searchParams.delete('lang')
+    window.location.assign(url.toString())
   }
 
   const value = useMemo(() => ({ language, setLanguage, t: (key: TranslationKey) => translations[language][key] }), [language])

@@ -1,3 +1,5 @@
+import { pathFor, seoContent, type SeoLocale } from '@/lib/seo-content'
+
 const SITE_URL = 'https://strong-4k.com'
 
 const FAQ_ITEMS: { q: string; a: string }[] = [
@@ -137,11 +139,19 @@ const MERCHANT_RETURN_POLICY = {
 
 const PRODUCT_IMAGES = [`${SITE_URL}/images/strong-8k-logo-mark.png`]
 
-export function StructuredData() {
+export function StructuredData({ locale = 'en' }: { locale?: SeoLocale }) {
+  const canonical = `${SITE_URL}${pathFor(locale)}/`
+
+  // FAQPage must match the copy actually rendered in the page for that locale:
+  // the long-tail block comes from lib/seo-content.ts and is localized, so mixing
+  // the English defaults into a non-English page would be a mismatch.
+  const localizedFaq = seoContent(locale).faq
+  const faqItems = locale === 'en' ? [...FAQ_ITEMS, ...localizedFaq] : localizedFaq
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: FAQ_ITEMS.map((item) => ({
+    mainEntity: faqItems.map((item) => ({
       '@type': 'Question',
       name: item.q,
       acceptedAnswer: {
@@ -157,7 +167,7 @@ export function StructuredData() {
     name: 'STRONG 8K IPTV',
     description:
       'Premium IPTV service streaming 20,000+ live TV channels and VOD in 8K/4K across Italy, France, Germany, Spain, UK and USA with anti-freeze technology and zero buffering.',
-    url: SITE_URL,
+    url: canonical,
     image: PRODUCT_IMAGES,
     sku: 'STRONG8K-SUB',
     mpn: 'STRONG8K-SUB',
@@ -179,7 +189,7 @@ export function StructuredData() {
         price: offer.price,
         priceCurrency: 'USD',
         priceValidUntil: PRICE_VALID_UNTIL,
-        url: `${SITE_URL}/#pricing`,
+        url: `${canonical}#pricing`,
         availability: 'https://schema.org/InStock',
         itemCondition: 'https://schema.org/NewCondition',
         shippingDetails: SHIPPING_DETAILS,

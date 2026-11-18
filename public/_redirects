@@ -1,0 +1,7 @@
+# Legacy single-URL language switching (?lang=xx) -> real locale routes (301).
+# Keeps old shared links and previously indexed ?lang URLs pointing at the new
+# static pages instead of a query string on the English page.
+
+/en/*  /  301
+
+# Arabic pages are RTL; nothing to rewrite here, dir is set by the locale layout.
