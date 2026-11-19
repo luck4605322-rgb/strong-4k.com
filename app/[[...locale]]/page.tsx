@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { SitePage } from '@/components/site-page'
-import { isSeoLocale } from '@/lib/seo-content'
+import { RegionPage } from '@/components/region-page'
+import { resolveRoute } from '@/lib/routing'
 
 export default async function Page({
   params,
@@ -8,10 +9,10 @@ export default async function Page({
   params: Promise<{ locale?: string[] }>
 }) {
   const { locale: segments } = await params
-  const raw = segments?.[0]
+  const route = resolveRoute(segments)
 
   // "/" (no segment) is the English home; anything unknown is a 404.
-  if (raw === undefined) return <SitePage locale="en" />
-  if (!isSeoLocale(raw)) notFound()
-  return <SitePage locale={raw} />
+  if (!route) notFound()
+  if (route.kind === 'region') return <RegionPage landing={route.landing} />
+  return <SitePage locale={route.locale} />
 }

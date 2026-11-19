@@ -1,33 +1,7 @@
-import { pathFor, seoContent, type SeoLocale } from '@/lib/seo-content'
+import { pathFor, type SeoLocale } from '@/lib/seo-content'
+import { faqFor } from '@/lib/faq-data'
 
 const SITE_URL = 'https://strong-4k.com'
-
-const FAQ_ITEMS: { q: string; a: string }[] = [
-  {
-    q: 'How do I set up STRONG 8K IPTV?',
-    a: 'After ordering via WhatsApp you receive your login credentials instantly. Enter your Xtream Codes API details or M3U playlist URL into any supported app (Firestick, Smart TV, Android Box, IPTVnator, VLC) and you are streaming in minutes.',
-  },
-  {
-    q: 'Do you include Italian channels and Serie A?',
-    a: 'Yes. IPTV Italia coverage includes Serie A, Sky IT, Mediaset and RAI in full 4K/8K quality, alongside every other country package at no extra cost.',
-  },
-  {
-    q: 'Does STRONG 8K IPTV support Xtream Codes?',
-    a: 'Absolutely. We provide both Xtream Codes API and M3U playlist formats, so the service works with virtually every IPTV player and device on the market.',
-  },
-  {
-    q: 'Can I get a 24h free trial?',
-    a: 'Yes — message us via Telegram (@IPTVstrong8k_admin) or WhatsApp and request your 24-hour free trial. We will activate a full-access test line so you can check quality and channels risk-free.',
-  },
-  {
-    q: 'Which countries and languages are supported?',
-    a: 'Italy, France, Germany, Spain, UK, USA and 20,000+ international channels with multi-language audio and subtitles are all included in every subscription.',
-  },
-  {
-    q: 'How does the IPTV Reseller Program work?',
-    a: 'After purchasing a credit package, we will provide you with access to your own dedicated IPTV Admin Panel. You can create sub-accounts, manage users, and issue free trial lines anytime.',
-  },
-]
 
 const PLAN_OFFERS = [
   { name: '1 Month', price: '6.99' },
@@ -142,11 +116,9 @@ const PRODUCT_IMAGES = [`${SITE_URL}/images/strong-8k-logo-mark.png`]
 export function StructuredData({ locale = 'en' }: { locale?: SeoLocale }) {
   const canonical = `${SITE_URL}${pathFor(locale)}/`
 
-  // FAQPage must match the copy actually rendered in the page for that locale:
-  // the long-tail block comes from lib/seo-content.ts and is localized, so mixing
-  // the English defaults into a non-English page would be a mismatch.
-  const localizedFaq = seoContent(locale).faq
-  const faqItems = locale === 'en' ? [...FAQ_ITEMS, ...localizedFaq] : localizedFaq
+  // FAQPage must render exactly the questions visible in <Faq /> on this page.
+  // Both read lib/faq-data.ts, so a copy edit can never desync the markup.
+  const faqItems = faqFor(locale)
 
   const faqSchema = {
     '@context': 'https://schema.org',
@@ -164,13 +136,20 @@ export function StructuredData({ locale = 'en' }: { locale?: SeoLocale }) {
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'STRONG 8K IPTV',
+    name: 'STRONG 8K IPTV — 8K/4K Subscription with Anti-Freeze 10.0',
     description:
-      'Premium IPTV service streaming 20,000+ live TV channels and VOD in 8K/4K across Italy, France, Germany, Spain, UK and USA with anti-freeze technology and zero buffering.',
+      'STRONG 8K IPTV subscription: 20,000+ live channels and 100,000+ VOD in 8K/4K for IPTV Italia (Serie A), IPTV France (Ligue 1), IPTV Deutschland (Bundesliga) and IPTV España (LaLiga), plus UK and USA. Anti-Freeze 10.0 servers, 99.9% uptime, instant line delivery within 5 minutes, support for Firestick, Smart TV, Android Box, iOS and MAG. 24 hours free trial and IPTV reseller panel with credit packages for B2B partners.',
     url: canonical,
     image: PRODUCT_IMAGES,
     sku: 'STRONG8K-SUB',
     mpn: 'STRONG8K-SUB',
+    category: 'Internet Protocol Television (IPTV) Subscription',
+    keywords:
+      'Strong 4K/8K IPTV, IPTV Italia, IPTV France, IPTV Deutschland, IPTV España, Anti-Freeze 10.0 IPTV, 24 Hours Free Trial, Buy IPTV Subscription for Firestick & Smart TV, IPTV Reseller Panel, IPTV Credit Packages',
+    audience: [
+      { '@type': 'PeopleAudience', audienceType: 'Retail subscribers' },
+      { '@type': 'BusinessAudience', audienceType: 'IPTV resellers and reseller panel partners' },
+    ],
     brand: {
       '@type': 'Brand',
       name: 'STRONG 8K IPTV',
@@ -201,16 +180,35 @@ export function StructuredData({ locale = 'en' }: { locale?: SeoLocale }) {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${SITE_URL}/#organization`,
     name: 'STRONG 8K IPTV',
+    alternateName: 'STRONG 4K IPTV',
     url: SITE_URL,
+    logo: `${SITE_URL}/images/strong-8k-logo-mark.png`,
+    image: `${SITE_URL}/images/og-image.png`,
     description:
-      'Premium 8K/4K IPTV provider for Italy, France, Germany, Spain, UK and worldwide.',
-    sameAs: ['https://t.me/IPTVstrong8k_admin'],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      contactType: 'customer support',
-      availableLanguage: ['English', 'Italian', 'French', 'German', 'Spanish', 'Arabic'],
-    },
+      'Premium 8K/4K IPTV provider for Italy, France, Germany, Spain, UK and worldwide — retail subscriptions and IPTV reseller panel with credit packages.',
+    sameAs: ['https://t.me/IPTVstrong8k_admin', 'https://wa.me/8618573887383'],
+    areaServed: SUPPORTED_COUNTRIES.map((code) => ({ '@type': 'Country', name: code })),
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        telephone: '+8618573887383',
+        url: 'https://wa.me/8618573887383',
+        availableLanguage: [
+          'English',
+          'Italian',
+          'French',
+          'German',
+          'Spanish',
+          'Portuguese',
+          'Arabic',
+          'Turkish',
+        ],
+        areaServed: 'Worldwide',
+      },
+    ],
   }
 
   return (

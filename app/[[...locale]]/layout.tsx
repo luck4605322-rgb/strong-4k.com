@@ -1,33 +1,56 @@
 import type { Metadata, Viewport } from 'next'
 import '../globals.css'
-import { SEO_LOCALES, SEO_LANG_LABEL, isSeoLocale, pathFor, seoContent } from '@/lib/seo-content'
+import { SEO_LANG_LABEL, seoContent } from '@/lib/seo-content'
+import { KEYWORD_MATRIX } from '@/lib/pain-points'
+import {
+  SITE_URL,
+  homeAlternates,
+  regionAlternates,
+  resolveRoute,
+  routeLocale,
+  staticRouteParams,
+} from '@/lib/routing'
 
-const SITE_URL = 'https://strong-4k.com'
-
-const OG_LOCALES = ['it_IT','fr_FR','de_DE','es_ES','pt_PT','nl_NL','pl_PL','ro_RO','el_GR','tr_TR','ar_AR']
-
-const EN_TITLE = 'STRONG 8K IPTV Official | Premium IPTV Italia, France, Germany & Worldwide'
-const EN_DESCRIPTION =
-  'STRONG 8K IPTV - The #1 premium IPTV service. Stream 20,000+ local & international live TV channels including IPTV Italia, France, Germany, UK, USA and Spain in 8K/4K with zero buffering. Serie A, Ligue 1, Bundesliga, Premier League & more.'
-const OG_DESCRIPTION =
-  'Stream 20,000+ live TV channels in 8K/4K. Premium IPTV for Italy, France, Germany, UK, USA & Spain with zero buffering.'
-
-// Single root layout (optional catch-all) so <html lang> / dir follow the route:
-// "/" => en, "/it/" => it ... Static export pre-renders one HTML per param below.
+// One HTML per locale + one per country landing page (see lib/routing.ts).
 export const dynamicParams = false
 
 export function generateStaticParams() {
-  return [
-    { locale: [] as string[] },
-    ...SEO_LOCALES.filter((l) => l !== 'en').map((l) => ({ locale: [l] as string[] })),
-  ]
+  return staticRouteParams()
 }
 
-function languageAlternates(): Record<string, string> {
-  const alternates: Record<string, string> = { 'x-default': `${SITE_URL}/` }
-  for (const locale of SEO_LOCALES) alternates[locale] = `${SITE_URL}${pathFor(locale)}/`
-  return alternates
+const OG_LOCALE: Record<string, string> = {
+  en: 'en_US',
+  it: 'it_IT',
+  fr: 'fr_FR',
+  de: 'de_DE',
+  es: 'es_ES',
+  pt: 'pt_PT',
+  nl: 'nl_NL',
+  pl: 'pl_PL',
+  ro: 'ro_RO',
+  el: 'el_GR',
+  tr: 'tr_TR',
+  ar: 'ar_AR',
 }
+
+const OG_ALTERNATES = Object.values(OG_LOCALE).filter((l) => l !== 'en_US')
+
+const EN_TITLE = 'STRONG 8K IPTV | IPTV Italia, France, Deutschland & 24h Free Trial'
+const EN_DESCRIPTION =
+  'STRONG 8K IPTV — premium 8K/4K IPTV subscription with 20,000+ live channels, Anti-Freeze 10.0, 99.9% uptime and a 24 hours free trial. IPTV Italia (Serie A), France (Ligue 1), Deutschland (Bundesliga) and España (LaLiga) on Firestick, Smart TV and Android Box. IPTV reseller panel and credit packages available.'
+
+const OG_DESCRIPTION =
+  'Stream 20,000+ live channels in 8K/4K with Anti-Freeze 10.0. IPTV for Italy, France, Germany, Spain, UK & USA — 24h free trial, instant activation within 5 minutes.'
+
+// Retail + B2B keyword matrix, kept in one array so the metadata never drifts
+// from the on-page copy (both read lib/pain-points.ts).
+const META_KEYWORDS = [
+  ...KEYWORD_MATRIX.brand,
+  ...KEYWORD_MATRIX.retail,
+  ...KEYWORD_MATRIX.retailIntent,
+  ...KEYWORD_MATRIX.b2b,
+  ...KEYWORD_MATRIX.b2bIntent,
+]
 
 export async function generateMetadata({
   params,
@@ -35,10 +58,53 @@ export async function generateMetadata({
   params: Promise<{ locale?: string[] }>
 }): Promise<Metadata> {
   const { locale: segments } = await params
-  const raw = segments?.[0]
-  const locale = isSeoLocale(raw) ? raw : 'en'
-  const canonical = `${SITE_URL}${pathFor(locale)}/`
+  const route = resolveRoute(segments)
 
+  // Unknown segment -> 404 page, emits nothing but a noindex shell.
+  if (!route) {
+    return { metadataBase: new URL(SITE_URL), title: 'Not found', robots: { index: false, follow: false } }
+  }
+
+  if (route.kind === 'region') {
+    const { landing, canonical, locale } = route
+    return {
+      metadataBase: new URL(SITE_URL),
+      title: landing.metaTitle,
+      description: landing.metaDescription,
+      keywords: landing.keywords,
+      alternates: {
+        canonical,
+        languages: regionAlternates(locale, canonical),
+      },
+      openGraph: {
+        title: landing.metaTitle,
+        description: landing.metaDescription,
+        type: 'website',
+        url: canonical,
+        siteName: 'STRONG 8K IPTV',
+        locale: OG_LOCALE[locale] ?? 'en_US',
+        alternateLocale: OG_ALTERNATES,
+        images: [
+          {
+            url: '/images/og-image.png',
+            width: 1200,
+            height: 630,
+            type: 'image/png',
+            alt: landing.h1,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: landing.metaTitle,
+        description: landing.metaDescription,
+        images: ['/images/og-image.png'],
+      },
+      robots: { index: true, follow: true },
+    }
+  }
+
+  const { locale, canonical } = route
   const title = locale === 'en' ? EN_TITLE : seoContent(locale).headline
   const description = locale === 'en' ? EN_DESCRIPTION : seoContent(locale).intro
 
@@ -46,30 +112,19 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_URL),
     title,
     description,
-    alternates: { canonical, languages: languageAlternates() },
-    keywords: [
-      'STRONG 8K',
-      'STRONG IPTV',
-      'IPTV Italia',
-      'IPTV France',
-      'IPTV Deutschland',
-      'IPTV España',
-      'Italy IPTV',
-      'Germany IPTV',
-      'Buy IPTV 8K',
-      'IPTV Serie A',
-      'Anti-Freeze IPTV',
-      'Premium IPTV',
-    ],
-    generator: 'v0.app',
+    alternates: {
+      canonical,
+      languages: homeAlternates(),
+    },
+    keywords: META_KEYWORDS,
     openGraph: {
       title,
       description: locale === 'en' ? OG_DESCRIPTION : description,
       type: 'website',
       url: canonical,
       siteName: 'STRONG 8K IPTV',
-      locale: locale === 'en' ? 'en_US' : locale,
-      alternateLocale: OG_LOCALES,
+      locale: OG_LOCALE[locale] ?? 'en_US',
+      alternateLocale: OG_ALTERNATES,
       images: [
         {
           url: '/images/og-image.png',
@@ -103,8 +158,7 @@ export default async function RootLayout({
   params: Promise<{ locale?: string[] }>
 }) {
   const { locale: segments } = await params
-  const raw = segments?.[0]
-  const locale = isSeoLocale(raw) ? raw : 'en'
+  const locale = routeLocale(segments)
   const isRtl = locale === 'ar'
 
   return (
